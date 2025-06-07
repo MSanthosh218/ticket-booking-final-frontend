@@ -1,5 +1,5 @@
 // src/api.js
-const API_BASE_URL = 'http://localhost:5000/api'; // Your backend server URL
+const API_BASE_URL = 'https://booking-tickets-backend-5.onrender.com/api'; // Your backend server URL
 
 // Helper function to make authenticated requests
 const request = async (method, url, data = null, token = null) => {
