@@ -1,4 +1,4 @@
-// src/components/SeatSelectionModal.jsx
+
 import React, { useState, useEffect } from 'react';
 import { getShowSeats, createBooking } from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -95,11 +95,12 @@ const SeatSelectionModal = ({ show, onClose, onSuccess }) => {
   };
 
   const calculateTotalPrice = () => {
-    return selectedSeatIds.length * show.price;
+    return selectedSeatIds.length * (show?.price || 0); // Defensive: handle if show.price is undefined
   };
 
+  // Primary guard for the 'show' prop
   if (!show) {
-    return null; // Or some placeholder/error if show prop is missing
+    return null; // Render nothing if show prop is missing or not yet loaded
   }
 
   // Group seats by row for rendering
@@ -136,10 +137,11 @@ const SeatSelectionModal = ({ show, onClose, onSuccess }) => {
         )}
 
         <div className="mb-4 text-center">
-          <p className="text-xl font-semibold text-gray-800">{show.movie?.title}</p>
-          <p className="text-md text-gray-600">{show.theatre?.name} - {show.screen?.name}</p>
+          {/* Defensive optional chaining for nested properties */}
+          <p className="text-xl font-semibold text-gray-800">{show.movie?.title || 'Loading Movie...'}</p>
+          <p className="text-md text-gray-600">{show.theatre?.name || 'Loading Theatre...'} - {show.screen?.name || 'Loading Screen...'}</p>
           <p className="text-md text-gray-600">{new Date(show.showTime).toLocaleString()}</p>
-          <p className="text-lg font-bold text-green-700">Price per seat: ₹{show.price.toFixed(2)}</p>
+          <p className="text-lg font-bold text-green-700">Price per seat: ₹{show.price?.toFixed(2) || 'N/A'}</p>
         </div>
 
         {loading ? (
@@ -152,19 +154,24 @@ const SeatSelectionModal = ({ show, onClose, onSuccess }) => {
             <div className="text-center text-lg font-semibold mb-4 text-gray-700">Screen This Way</div>
             <div className="bg-gray-700 h-2 w-full mb-6 rounded"></div>
 
-            <div className="flex justify-center flex-wrap gap-x-2 gap-y-4">
+            <div className="flex flex-col items-center">
               {sortedRows.map((row) => (
-                <div key={row} className="flex items-center mb-2">
-                  <span className="font-bold mr-2 w-6 text-right">{row}</span>
-                  <div className="flex gap-1">
+                <div key={row} className="flex items-start mb-2 w-full justify-center">
+                  {/* <span className="font-bold mr-2 w-6 text-right mt-2">{row}</span> */}
+                  <div className="flex flex-wrap gap-1 max-w-[calc(10*2.5rem+9*0.25rem)]"> {/* Forces 10 columns */}
                     {groupedSeats[row]
                       .sort((a, b) => a.seatColumn - b.seatColumn)
                       .map((seat) => (
                         <button
                           key={seat.id}
                           className={`w-10 h-10 rounded-md text-white font-bold text-sm flex items-center justify-center
-                            ${seat.status === 'BOOKED' ? 'bg-red-500 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}
-                            ${selectedSeatIds.includes(seat.id) ? 'border-4 border-blue-400 scale-110' : ''}
+                            ${seat.status === 'BOOKED'
+                              ? 'bg-red-500 cursor-not-allowed' // Booked seats are red
+                              : selectedSeatIds.includes(seat.id)
+                                ? 'bg-blue-600 hover:bg-blue-700' // Selected seats are blue
+                                : 'bg-green-500 hover:bg-green-600' // Available seats are green
+                            }
+                            ${selectedSeatIds.includes(seat.id) ? 'scale-110' : ''} {/* Scale up for selected seats */}
                             transition-all duration-200 ease-in-out`}
                           onClick={() => handleSeatClick(seat.id, seat.status)}
                           disabled={seat.status === 'BOOKED' || bookingLoading}
@@ -203,7 +210,7 @@ const SeatSelectionModal = ({ show, onClose, onSuccess }) => {
             <span className="w-4 h-4 bg-red-500 rounded-sm mr-2"></span> Booked
           </div>
           <div className="flex items-center">
-            <span className="w-4 h-4 bg-blue-400 border-2 border-blue-600 rounded-sm mr-2"></span> Selected
+            <span className="w-4 h-4 bg-blue-600 rounded-sm mr-2"></span> Selected
           </div>
         </div>
       </div>
